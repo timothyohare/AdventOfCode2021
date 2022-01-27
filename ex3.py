@@ -1,66 +1,48 @@
 import sys, getopt, re
+import logging
 
-def readFile(fileName: str):
+def readFile(logger, fileName: str):
   count_of_ones_zeros = {}
   with open(fileName) as f:
     for line in f:
       pos = 0
-      print("Line:", line, end=" ")
+      #logger.debug(f"Line:{line}")
       for bit in line:
-        print (f"Pos:{pos}, bit:{bit}", end=" ")
+        logger.debug (f"Pos:{pos}, bit:{bit}")
         if bit == '1':
-            print("bit 1", end=" ")
             if pos in count_of_ones_zeros:
                 curr_1_count = count_of_ones_zeros[pos]
-                print("curr1count:", curr_1_count)
-                #count_of_ones_zeros[pos].update(curr_1_count + 1)
                 count_of_ones_zeros[pos] = curr_1_count + 1
-                #if 1 in count_of_ones_zeros[pos]:
-                #    curr_1_count = count_of_ones_zeros[pos][1]
-                #    count_of_ones_zeros[pos][1].update(curr_1_count + 1)
-                #else:
-                #    count_of_ones_zeros[pos][1] = 1
             else:
-                #count_of_ones_zeros[pos] = {}
-                print(f"init[{pos}] with 1")
+                logger.debug(f"init[{pos}] with 1")
                 count_of_ones_zeros[pos] = 1
-                #count_of_ones_zeros[pos][1] = 1
         elif bit == '0':
-            print("bit 0", end=" ")
+            logger.debug("bit 0")
             if pos in count_of_ones_zeros:
                 curr_1_count = count_of_ones_zeros[pos]
-                print("curr0count:", curr_1_count)
-                #count_of_ones_zeros[pos].update(curr_0_count - 1)
                 count_of_ones_zeros[pos]= curr_1_count - 1
-                #if 0 in count_of_ones_zeros[pos]:
-                #    curr_0_count = count_of_ones_zeros[pos][0]
-                #    count_of_ones_zeros[pos][0].update(curr_0_count + 1)
-                #else:
-                #    count_of_ones_zeros[pos][0] = 1
             else:
                 count_of_ones_zeros[pos] = -1
-                print(f"init[{pos}]] with -1")
-                #count_of_ones_zeros[pos][0] = 1
-
-        else:
-            print ( "Ekk: ", bit)
+                logger.debug(f"init[{pos}]] with -1")
         pos = pos + 1   
-  print ('count_of_ones_zeros: ',count_of_ones_zeros)
-  gamma = []
-  epsilon = []
-  for key,val in count_of_ones_zeros:
+  #print ('count_of_ones_zeros: ',count_of_ones_zeros)
+  gamma = ""
+  epsilon = ""
+  for key,val in count_of_ones_zeros.items():
       if val > 0:
-        gamma[key] = 1
-        epsilon[key] = 0
+        gamma += '1'
+        epsilon += '0'
       elif val < 0:
-        gamma[key] = 0
-        epsilon[key] = 1
+        gamma += '0'
+        epsilon += '1'
       else:
         print("not +ve / -ve")
-        gamma[key] = 0
-        epsilon[key] = 0
-  print(f"gamma:{gamma}, epsilon:{epsilon}")
-
+        gamma += '0'
+        epsilon += '1'
+  gamma_int = int(gamma, 2)
+  epsilon_int = int(epsilon,2)
+  logger.info(f"gamma:{gamma}, {gamma_int}, epsilon:{epsilon}, {epsilon_int}")
+  logger.info(f"Power consumption: {gamma_int*epsilon_int}")
 
 def main(argv):
    inputfile = ''
@@ -78,9 +60,14 @@ def main(argv):
          inputfile = arg
       elif opt in ("-o", "--ofile"):
          outputfile = arg
-   print ('Input file is "', inputfile)
-   print ('Output file is "', outputfile)
-   readFile(inputfile)
+   logger = logging.getLogger("Basic logger")
+   logger.setLevel(logging.INFO)
+   stream_handler = logging.StreamHandler()
+   stream_handler.setLevel(logging.INFO)
+   logger.addHandler(stream_handler)
+   logger.debug(f"Input file is {inputfile}")
+   logger.debug(f"Output file is {outputfile}")
+   readFile(logger, inputfile)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
