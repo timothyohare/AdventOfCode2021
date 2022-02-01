@@ -43,21 +43,29 @@ class BingoRow:
                 cell.marked = True
                 return True
         return False
-    
+
     def isWinner(self) -> bool:
         for cell in self.bingoCell:
             if not cell.marked:
                 return False
         return True
 
+    def sumUnmarked(self) -> int:
+        sumUnmarked = 0
+        for cell in self.bingoCell:
+            if not cell.marked:
+                sumUnmarked += cell.val
+        return sumUnmarked
+
 
 class BingoBoard:
     logger = ""
 
-    def __init__(self, logger):
+    def __init__(self, logger, id):
         self.logger = logger
         # self.logger.debug("Init Bingoboard\n")
         self.bingoRow = []
+        self.boardId = id
 
     def update(self, row_num, row):
         # self.logger.debug(f"row_num: {row_num}, row: {row}, bingoRow len:{len(self.bingoRow)}\n")
@@ -71,19 +79,40 @@ class BingoBoard:
         for row in self.bingoRow:
             row.print()
         # self.logger.info('finshed board print\n')
-    
+
     def setMarked(self, picked: int) -> bool:
         for row in self.bingoRow:
             if row.setMarked(picked):
                 return True
         return False
-    
+
     def isWinner(self):
         for row in self.bingoRow:
             if row.isWinner():
+                self.logger.info(f"Row {row} is the winner\n")
+                row.print()
                 return True
-        # TODO check vertical rows
+        # check vertical rows
+        for i in range(0, 4):
+            if  self.bingoRow[0].bingoCell[i].marked and \
+                self.bingoRow[1].bingoCell[i].marked and \
+                self.bingoRow[2].bingoCell[i].marked and \
+                self.bingoRow[3].bingoCell[i].marked and \
+                    self.bingoRow[4].bingoCell[i].marked:
+                self.logger.info(f"Vertical row at {i} is the winner, with {self.bingoRow[0].bingoCell[i].val}, "\
+                                        f"{self.bingoRow[1].bingoCell[i].val}, {self.bingoRow[2].bingoCell[i].val}," \
+                                        f"{self.bingoRow[3].bingoCell[i].val}, {self.bingoRow[4].bingoCell[i].val}\n")
+                return True
         return False
+
+    def winningScore(self, picked: int) -> int:
+        sumUnmarked = 0
+        for row in self.bingoRow:
+            sumUnmarked += row.sumUnmarked()
+        total = sumUnmarked * picked
+        self.logger.debug(f"Sum unmarked {sumUnmarked} * picked {picked} = {total}\n")
+        return total
+
 
     # want to store BingoCells in 5x5 matrix
     # want to know if all numbers on a vertical or horizontal line
@@ -118,7 +147,7 @@ class Bingo:
             line_list = line.split(',')
             map_obj = map(int, line_list)
             self.markedNumbers = list(map_obj)
-
+            self.logger.debug(self.markedNumbers)
             f.readline()  # blank
 
             # start reading the bingo boards
@@ -126,7 +155,7 @@ class Bingo:
             board = 0
             while (line != ""):
                 # match 5 rows of 5 numbers
-                m = BingoBoard(self.logger)
+                m = BingoBoard(self.logger, board)
                 self.bingoBoards.append(m)
                 # self.logger.debug(f"bingoBoards len:{len(self.bingoBoards)}\n")
                 for row in range(5):
@@ -145,10 +174,11 @@ class Bingo:
         for board in self.bingoBoards:
             if board.setMarked(picked):
                 if board.isWinner():
-                    # self.winningScore = board.winningScore(picked)
+                    self.logger.info(f"Board {board.boardId} winner winner chicken dinner.\n")
+                    self.winningScore = board.winningScore(picked)
                     return True
         return False
-    
+
     def playGame(self):
         # iterate through the numbers
         # for each number interate through the boards
